@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "937860384217",
+    "project_id": "wormhole-cedd4",
+    "storage_bucket": "wormhole-cedd4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:937860384217:android:677b3a3a47403876bbc5c8",
+        "android_client_info": {
+          "package_name": "com.dag.myotp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoLCoBDZX5qnoY7gkvOL9FWh5gQbETPUI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
