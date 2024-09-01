@@ -1,19 +1,32 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity >=0.8.2 <0.9.0;
+pragma solidity >=0.8.19 <0.9.0;
 
-import "./interfaces/IWormholeReceiver.sol";
-import "./interfaces/IWormholeRelayer.sol";
+import "wormhole-solidity-sdk/interfaces/IWormholeRelayer.sol";
+import "wormhole-solidity-sdk/interfaces/IWormholeReceiver.sol";
+
 
 abstract contract CrossChainAuthority is IWormholeReceiver {
 
     address authorityManagerAddress;
+    address public latestVerificationAddress;
+    LatestVerification public latest ;
+
+    struct LatestVerification {
+        address VerificationAddress;
+        bool    isVerified;
+    }
+
+    uint256 constant GAS_LIMIT = 50_000;
+
+    IWormholeRelayer public immutable wormholeRelayer;
 
     event Verified(address userAddress);
     event NotVerified(address userAddress);
 
-    constructor(address _authorityManagerAddress){
+    constructor(address _authorityManagerAddress, address _wormholeRelayer ){
         _authorityManagerAddress = authorityManagerAddress;
+        wormholeRelayer = IWormholeRelayer(_wormholeRelayer);
     }
 
     function bytesToString(bytes memory payload)
@@ -56,14 +69,45 @@ abstract contract CrossChainAuthority is IWormholeReceiver {
         uint16 sourceChain,
         bytes32 deliveryHash
     ) external payable {
-        string memory message = bytesToString(payload);
+        //string memory message = bytesToString(payload);
         //user address must be taken
+        (string memory comment, address sender) = abi.decode(
+            payload,
+            (string, address)
+        );
         address sAddress = bytes32ToAddress(sourceAddress);
-        require(authorityManagerAddress == sAddress,"Wrong source address.");
-        if (compareStrings(message, "verified")) {
+        latest.VerificationAddress = sAddress;
+        if (compareStrings(comment, "verified")) {
+            latest.isVerified = true;
             emit Verified(sAddress);
-        } else if (compareStrings(message, "not_verified")) {
+        } else if (compareStrings(comment, "not_verified")) {
+            latest.isVerified = false;
             emit NotVerified(sAddress);
         }
+    }
+
+    function quoteCrossChainMessage(
+        uint16 targetChain
+    ) public view returns (uint256 cost) {
+        (cost, ) = wormholeRelayer.quoteEVMDeliveryPrice(
+            targetChain,
+            0,
+            GAS_LIMIT
+        );
+    }
+
+    function sendCrossChainMessage(
+        uint16 targetChain,
+        address targetAddress
+    ) public payable {
+        uint256 cost = quoteCrossChainMessage(targetChain);
+        require(msg.value == cost);
+        wormholeRelayer.sendPayloadToEvm{value: cost}(
+            targetChain,
+            targetAddress,
+            abi.encode("request", msg.sender), // payload
+            0, // no receiver value needed since we're just passing a message
+            GAS_LIMIT
+        );
     }
 }

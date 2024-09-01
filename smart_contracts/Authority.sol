@@ -2,17 +2,16 @@
 
 pragma solidity >=0.8.2 <0.9.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IAuthority.sol";
 
-contract Authority is Ownable,IAuthority{
+contract Authority is IAuthority{
 
     address manager;
     uint256 activeVerification;
     bool waitingVerification;
 
-    constructor(address initialOwner,address _manager)
-        Ownable(initialOwner)
+    constructor(address _manager)
+        
     {
         manager = _manager;
     }
