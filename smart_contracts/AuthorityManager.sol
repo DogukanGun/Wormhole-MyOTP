@@ -2,16 +2,21 @@
 
 pragma solidity >=0.8.2 <0.9.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Authority.sol";
 import "./interfaces/IAuthority.sol";
-import "./interfaces/IWormholeReceiver.sol";
-import "./interfaces/IWormholeRelayer.sol";
+import "wormhole-solidity-sdk/interfaces/IWormholeRelayer.sol";
+import "wormhole-solidity-sdk/interfaces/IWormholeReceiver.sol";
 
-contract AuthorityManager is Ownable, IWormholeReceiver {
-    constructor()
-        Ownable(msg.sender)
-    {}
+
+contract AuthorityManager is  IWormholeReceiver {
+    
+    IWormholeRelayer public immutable wormholeRelayer;
+
+    constructor(address _wormholeRelayer)
+       
+    {
+        wormholeRelayer = IWormholeRelayer(_wormholeRelayer);
+    }
 
     struct Message{
         address sourceAddress;
@@ -22,7 +27,6 @@ contract AuthorityManager is Ownable, IWormholeReceiver {
     mapping (address => Message) requestedVerification;
     uint256 constant GAS_LIMIT = 50_000;
 
-    IWormholeRelayer public immutable wormholeRelayer;
 
 
     event VerificationRequested(address sender,uint256 challange);
@@ -77,12 +81,12 @@ contract AuthorityManager is Ownable, IWormholeReceiver {
     }
 
     function createVerification() public {
-        address smartContractAddress = address(new Authority(msg.sender,address(this)));
+        address smartContractAddress = address(new Authority(address(this)));
         authorities[msg.sender] = smartContractAddress;
     }
 
     function createVerification(address userAddress) public {
-        address smartContractAddress = address(new Authority(userAddress,address(this)));
+        address smartContractAddress = address(new Authority(userAddress));
         authorities[msg.sender] = smartContractAddress;
     }
 
